@@ -16,45 +16,40 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     let lastSavedText = textarea.value;
 
-    // ✅ Save
-    saveBtn.addEventListener('click', async() => {
-        const result = await window.electronAPI.saveNote(
-            textarea.value,
-            currentFilePath
-        );
+    // =========================
+    // ✅ BUTTON EVENTS
+    // =========================
+
+    // Save
+    saveBtn.addEventListener('click', saveHandler);
+
+    async function saveHandler() {
+        const result = await window.electronAPI.saveNote(textarea.value, currentFilePath);
 
         if (result.success) {
             currentFilePath = result.filePath;
             lastSavedText = textarea.value;
             statusEl.textContent = "Saved successfully!";
         }
-    });
+    }
 
-    // ✅ Auto Save
-    async function autoSave() {
-        if (textarea.value === lastSavedText) return;
+    // Save As
+    saveAsBtn.addEventListener('click', saveAsHandler);
 
-        const result = await window.electronAPI.saveNote(
-            textarea.value,
-            currentFilePath
-        );
+    async function saveAsHandler() {
+        const result = await window.electronAPI.saveAs(textarea.value);
 
         if (result.success) {
             currentFilePath = result.filePath;
             lastSavedText = textarea.value;
-            statusEl.textContent = "Auto saved";
+            statusEl.textContent = "Saved As successful";
         }
     }
 
-    let timer;
+    // Open File
+    openBtn.addEventListener('click', openHandler);
 
-    textarea.addEventListener('input', () => {
-        clearTimeout(timer);
-        timer = setTimeout(autoSave, 5000);
-    });
-
-    // ✅ Open File
-    openBtn.addEventListener('click', async() => {
+    async function openHandler() {
         const result = await window.electronAPI.openFile();
 
         if (result.success) {
@@ -63,21 +58,12 @@ document.addEventListener('DOMContentLoaded', async() => {
             currentFilePath = result.filePath;
             statusEl.textContent = "File opened";
         }
-    });
+    }
 
-    // ✅ Save As
-    saveAsBtn.addEventListener('click', async() => {
-        const result = await window.electronAPI.saveAs(textarea.value);
+    // New Note
+    newNoteBtn.addEventListener('click', newHandler);
 
-        if (result.success) {
-            currentFilePath = result.filePath;
-            lastSavedText = textarea.value;
-            statusEl.textContent = "Saved As successful";
-        }
-    });
-
-    // ✅ New Note
-    newNoteBtn.addEventListener('click', async() => {
+    async function newHandler() {
         const result = await window.electronAPI.newNote();
 
         if (result.confirmed) {
@@ -86,9 +72,9 @@ document.addEventListener('DOMContentLoaded', async() => {
             currentFilePath = null;
             statusEl.textContent = "New note";
         }
-    });
+    }
 
-    // ✅ Delete All (safe)
+    // Delete All
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async() => {
             await window.electronAPI.deleteAll();
@@ -99,5 +85,36 @@ document.addEventListener('DOMContentLoaded', async() => {
             statusEl.textContent = "Deleted all";
         });
     }
+
+    // =========================
+    // ✅ AUTO SAVE
+    // =========================
+
+    async function autoSave() {
+        if (textarea.value === lastSavedText) return;
+
+        const result = await window.electronAPI.saveNote(textarea.value, currentFilePath);
+
+        if (result.success) {
+            currentFilePath = result.filePath;
+            lastSavedText = textarea.value;
+            statusEl.textContent = "Auto saved";
+        }
+    }
+
+    let timer;
+    textarea.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(autoSave, 5000);
+    });
+
+    // =========================
+    // 🔥 MENU EVENTS (IMPORTANT)
+    // =========================
+
+    window.electronAPI.onSave(saveHandler);
+    window.electronAPI.onSaveAs(saveAsHandler);
+    window.electronAPI.onOpenFile(openHandler);
+    window.electronAPI.onNewNote(newHandler);
 
 });
