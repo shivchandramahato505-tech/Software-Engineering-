@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -23,6 +23,61 @@ function createWindow() {
 app.whenReady().then(() => {
     createWindow();
 
+    // ✅ MENU (NO OPTIONAL CHAINING)
+    const menuTemplate = [{
+        label: 'File',
+        submenu: [{
+                label: 'New Note',
+                accelerator: 'CmdOrCtrl+N',
+                click: () => {
+                    const win = BrowserWindow.getFocusedWindow();
+                    if (win) {
+                        win.webContents.send('menu-new-note');
+                    }
+                }
+            },
+            {
+                label: 'Open File',
+                accelerator: 'CmdOrCtrl+O',
+                click: () => {
+                    const win = BrowserWindow.getFocusedWindow();
+                    if (win) {
+                        win.webContents.send('menu-open-file');
+                    }
+                }
+            },
+            {
+                label: 'Save',
+                accelerator: 'CmdOrCtrl+S',
+                click: () => {
+                    const win = BrowserWindow.getFocusedWindow();
+                    if (win) {
+                        win.webContents.send('menu-save');
+                    }
+                }
+            },
+            {
+                label: 'Save As',
+                accelerator: 'CmdOrCtrl+Shift+S',
+                click: () => {
+                    const win = BrowserWindow.getFocusedWindow();
+                    if (win) {
+                        win.webContents.send('menu-save-as');
+                    }
+                }
+            },
+            { type: 'separator' },
+            {
+                label: 'Quit',
+                accelerator: 'CmdOrCtrl+Q',
+                click: () => app.quit()
+            }
+        ]
+    }];
+
+    const menu = Menu.buildFromTemplate(menuTemplate);
+    Menu.setApplicationMenu(menu);
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
@@ -36,7 +91,7 @@ app.on('window-all-closed', () => {
     }
 });
 
-// Load Note
+// ✅ Load Note
 ipcMain.handle('load-note', async() => {
     const filePath = getNotePath();
 
@@ -47,7 +102,7 @@ ipcMain.handle('load-note', async() => {
     return '';
 });
 
-// Save Note
+// ✅ Save Note
 ipcMain.handle('save-note', async(event, text, filePath) => {
     const savePath = filePath || getNotePath();
 
@@ -59,13 +114,11 @@ ipcMain.handle('save-note', async(event, text, filePath) => {
     };
 });
 
-// Save As
+// ✅ Save As
 ipcMain.handle('save-as', async(event, text) => {
     const result = await dialog.showSaveDialog({
         defaultPath: 'mynote.txt',
-        filters: [
-            { name: 'Text Files', extensions: ['txt'] }
-        ]
+        filters: [{ name: 'Text Files', extensions: ['txt'] }]
     });
 
     if (result.canceled) {
@@ -80,13 +133,11 @@ ipcMain.handle('save-as', async(event, text) => {
     };
 });
 
-// Open File
+// ✅ Open File
 ipcMain.handle('open-file', async() => {
     const result = await dialog.showOpenDialog({
         properties: ['openFile'],
-        filters: [
-            { name: 'Text Files', extensions: ['txt'] }
-        ]
+        filters: [{ name: 'Text Files', extensions: ['txt'] }]
     });
 
     if (result.canceled) {
@@ -103,7 +154,7 @@ ipcMain.handle('open-file', async() => {
     };
 });
 
-// New Note
+// ✅ New Note
 ipcMain.handle('new-note', async() => {
     const result = await dialog.showMessageBox({
         type: 'warning',
@@ -116,7 +167,7 @@ ipcMain.handle('new-note', async() => {
     return { confirmed: result.response === 0 };
 });
 
-// Delete All
+// ✅ Delete All
 ipcMain.handle('delete-all', async() => {
     fs.writeFileSync(getNotePath(), '', 'utf-8');
     return { success: true };
